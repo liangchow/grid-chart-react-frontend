@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 # backend
-app
+app/test
