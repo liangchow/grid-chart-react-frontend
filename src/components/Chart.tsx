@@ -18,9 +18,12 @@ ChartJS.register(LinearScale, LogarithmicScale, PointElement, LineElement, Title
 
 type Props = {
   data: Row[]
+  compressionIdx: number | null
+  recompressionIdx: number | null
+  warnings: string[]
 }
 
-function Chart({ data }: Props) {
+function Chart({ data, compressionIdx, recompressionIdx, warnings }: Props) {
 
   const points = useMemo(() => data.filter((d): d is Required<Row> =>
             d.pressure != null &&
@@ -88,6 +91,19 @@ function Chart({ data }: Props) {
 
   return (
     <div style={{ height: "400px", width: "100%" }}>
+      <div>
+        <div>
+          {compressionIdx != null && <span>CompressionIdx: {compressionIdx.toFixed(3)}</span>}
+          {recompressionIdx != null && <span> RecompressionIdx: {recompressionIdx.toFixed(3)}</span>}
+        </div>
+        {warnings.length > 0 && (
+          <div>
+            {warnings.map((w, i) => (
+              <div key={i}>{w}</div>
+            ))}
+          </div>
+        )}
+      </div>
       <Line data={chartData} options={chartOptions} />
     </div>
   )
