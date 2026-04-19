@@ -12,18 +12,34 @@ class RowIn(BaseModel):
     pressure: Optional[float] = None
     void_ratio: Optional[float] = None
 
+# class ProcessRequest(BaseModel):
+#     sigmaV0: float = Field(..., gt=0)
+#     rows: List[RowIn]
 
-class ProcessRequest(BaseModel):
-    sigmaV0: float = Field(..., gt=0)
-    rows: List[RowIn]
+class Point(BaseModel):
+    x: float
+    y: float
 
+class LineSegment(BaseModel):
+    start: Point
+    end: Point
+    slope: float
+    intercept: float
 
-class Indices(BaseModel):
+class ProcessResponse(BaseModel):
+    """
+    Data needed to render in frontend.
+    """
+    loding_curve_points: List[Point]
+    segment1: LineSegment
+    segment2: LineSegment
+    sigma_p: float
+    e_p: float
     ccIdx: Optional[float]
     crIdx: Optional[float]
     warnings: List[str]
 
-
+# App setup
 app = FastAPI(debug=True)
 
 origins = [
@@ -50,12 +66,12 @@ def _to_float(value: object) -> Optional[float]:
         return None
     return None
 
-def _find_unloading_and_reloading_indices(stress: Sequence[float]) -> Tuple[List[int], List[int]]:
-    idx_unloading_init: List[int] = []
-    idx_reloading_init: List[int] = []
-    for i in range(1, len(stress) - 1):
-        if stress[i] > stress[i - 1] and stress[i] > stress[i + 1]:
-            idx_unloading_init.append(i)
-        if stress[i] < stress[i - 1] and stress[i] < stress[i + 1]:
-            idx_reloading_init.append(i)
-    return idx_unloading_init, idx_reloading_init
+# def _find_unloading_and_reloading_indices(stress: Sequence[float]) -> Tuple[List[int], List[int]]:
+#     idx_unloading_init: List[int] = []
+#     idx_reloading_init: List[int] = []
+#     for i in range(1, len(stress) - 1):
+#         if stress[i] > stress[i - 1] and stress[i] > stress[i + 1]:
+#             idx_unloading_init.append(i)
+#         if stress[i] < stress[i - 1] and stress[i] < stress[i + 1]:
+#             idx_reloading_init.append(i)
+#     return idx_unloading_init, idx_reloading_init
