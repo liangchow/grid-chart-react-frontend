@@ -54,17 +54,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Define utility functions
-
+# Utility functions
 def _to_float(value: object) -> Optional[float]:
-    if value is None:
+    """
+    Coerce a value to finite float, or returning None if not.
+    Reject None, bool, string, inf, and nan.
+    """
+    if value is None or isinstance(value, bool):
         return None
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
+    if isinstance(value, (int, float)):
         v = float(value)
-        if np.isfinite(v):
-            return v
-        return None
+        return v if np.isfinite(v) else None
+    if isinstance(value, str):
+        try:
+            v = float(value)
+            return v if np.isfinite(v) else None
+        except ValueError:
+            return None
     return None
+
+# Processing functions
 
 # def _find_unloading_and_reloading_indices(stress: Sequence[float]) -> Tuple[List[int], List[int]]:
 #     idx_unloading_init: List[int] = []
