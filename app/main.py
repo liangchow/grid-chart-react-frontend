@@ -102,12 +102,12 @@ def loading_curve(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray:
     return np.array(loading_data, dtype=_LOADING_DTYPE)
 
 
-def fit_error(x: NDArray[np.float64], y: NDArray[np.float64]) -> float:
+def _fit_error(x: NDArray[np.float64], y: NDArray[np.float64]) -> float:
     coeffs = np.polyfit(x, y, deg=1)
     y_pred = np.polyval(coeffs, x)
     return float(np.sum(y - y_pred)**2)
 
-def bilinear(log_x: NDArray[np.float64], y: NDArray[np.float64]) -> Tuple[float, float, NDArray, NDArray]:
+def bilinear(log_x: NDArray[np.float64], y: NDArray[np.float64]) -> Tuple[float, float, float, float]:
     """
     Bilinear fit to find yield point
     
@@ -116,11 +116,11 @@ def bilinear(log_x: NDArray[np.float64], y: NDArray[np.float64]) -> Tuple[float,
     y: 1-d array of void ratio
 
     Returns:
-    sigma_p, e_p
+    sigma_p, e_p, sse1, sse2
 
     """
     n = len(log_x)
-    best k = None
+    best_k = None
     best_err = np.inf
 
     # Minimum of 2 points are needed
@@ -130,19 +130,22 @@ def bilinear(log_x: NDArray[np.float64], y: NDArray[np.float64]) -> Tuple[float,
             best_err = err
             best_k = k
 
-    coeff1 = np.polyfit(log_x[:best_k], y[:best_k], deg=1)
-    coeff2 = np.polyfit(log_x[best_k:], y[best_k:], deg=1)
+    coeffs1 = np.polyfit(log_x[:best_k], y[:best_k], deg=1)
+    coeffs2 = np.polyfit(log_x[best_k:], y[best_k:], deg=1)
 
-    dslope = (coeff1[0] - coeff2[0])
+    sse1 = float(np.sum(y[:best_k] - np.polyval(coeffs1, log_x[:best_k]))**2)
+    sse2 = float(np.sum(y[best_k:] - np.polyval(coeffs2, log_x[best_k:]))**2)
+
+    dslope = (coeffs1[0] - coeffs2[0])
     if np.isclose(dslope, 0, atol=1e-10):
         raise ValueError("The two regression lines are parallel. Cannot determine intersection (yield) point.")
     
-    log_p_init = (coeff1[1] - coeff2[1]) / dslope
-    e_p = float(np.polyval(coeff1, log_p_init))
+    log_p_init = (coeffs1[1] - coeffs2[1]) / dslope
+    e_p = float(np.polyval(coeffs1, log_p_init))
 
     sigma_p = float(10**log_p_init) # Return to original unit
 
-    return sigma_p, e_p, 
+    return sigma_p, e_p, sse1, sse2
 
 # def _find_unloading_and_reloading_indices(stress: Sequence[float]) -> Tuple[List[int], List[int]]:
 #     idx_unloading_init: List[int] = []
