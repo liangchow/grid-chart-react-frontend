@@ -54,7 +54,10 @@ function Chart({ data, compressionIdx, recompressionIdx, warnings }: Props) {
         .attr("x", width / 2)
         .attr("y", height / 2)
         .attr("text-anchor", "middle")
-        .attr("fill", "#888")
+        .attr("fill", "#2d7a6b")
+        .attr('stroke', '#faf8f3')
+        .attr('stroke-width', 1.5)
+        .transition().delay((_,i)=>200+i*80).duration(300).ease(d3.easeBackOut)
         .text("No valid data to display.");
       return;
     }
@@ -77,6 +80,12 @@ function Chart({ data, compressionIdx, recompressionIdx, warnings }: Props) {
       .domain([yExtent[0] - yPad, yExtent[1] + yPad])
       .range([height, 0])
       .nice();
+
+    // Border Rectangle  
+    root
+      .append('rect')
+      .attr('width', width).attr('height', height)
+      .attr('fill','none').attr('stroke','#d8d2c8').attr('stroke-width',1);
 
     // Grid lines
     const xTicks = xScale.ticks(6);
@@ -180,7 +189,8 @@ function Chart({ data, compressionIdx, recompressionIdx, warnings }: Props) {
       .line<{ x: number; y: number }>()
       .x((d) => xScale(d.x))
       .y((d) => yScale(d.y))
-      .curve(d3.curveCatmullRom.alpha(0.5));
+      .curve(d3.curveLinear)
+      // .curve(d3.curveCatmullRom.alpha(0.5));
 
     root
       .append("path")
