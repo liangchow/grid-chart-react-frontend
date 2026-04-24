@@ -10,9 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "chart.js": "^4.5.1",
+    "d3": "^7.9.0",
     "react": "^18.3.1",
-    "react-chartjs-2": "^5.3.1",
     "react-datasheet-grid": "^4.11.6",
     "react-dom": "^18.3.1"
   },
@@ -21,6 +20,7 @@
     "@eslint/js": "^9.39.4",
     "@rolldown/plugin-babel": "^0.2.1",
     "@types/babel__core": "^7.20.5",
+    "@types/d3": "^7.4.3",
     "@types/node": "^24.12.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
