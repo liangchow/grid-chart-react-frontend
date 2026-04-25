@@ -39,13 +39,12 @@ function App() {
       <>
         <div>
           <label>
-            Initial Effective Stress{" "}
+            Initial Effective Stress, P'v0: {" "}
             <input
               type="number"
               value={sigmaV0}
               onChange={(e) => setSigmaV0(e.target.value)}
               min={0}
-              step="any"
             />
           </label>
           {warningMessage != null && <div>{warningMessage}</div>}
