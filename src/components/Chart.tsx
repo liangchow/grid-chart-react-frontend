@@ -197,7 +197,7 @@ function Chart({ data, compressionIdx, recompressionIdx, warnings }: Props) {
       .datum(points)
       .attr("fill", "none")
       .attr("stroke", "rgba(75, 192, 192, 0.8)")
-      .attr("stroke-width", 2)
+      .attr("stroke-width", 2.5)
       .attr("d", lineGenerator);
 
     // Points
