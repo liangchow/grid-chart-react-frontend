@@ -6,6 +6,10 @@
     -webkit-text-fill-color: transparent;
 }
 
+:root {
+  --dsg-selection-border-color: tomato;
+}
+
 
 @property --angle {
     syntax: "<angle>";

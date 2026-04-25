@@ -1,14 +1,14 @@
 type Props = {
   onClick: () => void
   disabled?: boolean
-  label?: string
+  text?: string
 }
 
-function Button({ onClick, disabled = false, label = "Process" }: Props) {
+function Button({ onClick, text }: Props) {
 
   return (
-    <button type="button" onClick={onClick} disabled={disabled}>
-      {label}
+    <button onClick={onClick} className='px-8 mx-auto py-4 rounded-md border-2 bg-slate-500 border-blue-400 border-solid blueShadow duration-200'>
+      <p>{text}</p>
     </button>
   )
 }

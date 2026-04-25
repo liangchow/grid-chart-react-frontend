@@ -15,18 +15,20 @@ function Grid({ data, onChange }: Props) {
   // }
 
   const columns: Column<Row>[] = [
-    { ...keyColumn<Row, 'pressure'>('pressure', floatColumn), title: "Pressure"},
-    { ...keyColumn<Row, 'void_ratio'>('void_ratio', floatColumn), title: "Void Ratio"},
+    {...keyColumn<Row, 'pressure'>('pressure', floatColumn), title: "Pressure"},
+    {...keyColumn<Row, 'void_ratio'>('void_ratio', floatColumn), title: "Void Ratio"}
   ]
 
   return (
+    <div className="p-4 bg-gray-500 rounded-lg shadow">
         <DataSheetGrid<Row>
           value={data}
           columns={columns}
           onChange={onChange}
           createRow={() => ({ pressure: null, void_ratio: null })}
           autoAddRow
-        />
+          />
+    </div>
   )
 }
 

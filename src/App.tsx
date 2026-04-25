@@ -36,7 +36,7 @@ function App() {
   }
 
     return (
-      <>
+      <main className='min-h-screen flex flex-col bg-gradient-to-r from-slate-800 to-slate-950 text-white text-sm sm:text-base'>
         <div>
           <label>
             Initial Effective Stress, P'v0: {" "}
@@ -56,8 +56,8 @@ function App() {
           warnings={result?.warnings ?? []}
         />
         <Grid data={data} onChange={setData} />
-        <Button onClick={handleProcess} disabled={isProcessing} label={isProcessing ? "Processing..." : "Process"} />
-      </>
+        <Button onClick={handleProcess} text={isProcessing ? "Processing..." : "Process"} />
+      </main>
     )
 }
 
