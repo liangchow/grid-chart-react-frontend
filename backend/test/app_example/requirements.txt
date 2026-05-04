@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-anyio
-numpy
-scipy
-pydantic
-
