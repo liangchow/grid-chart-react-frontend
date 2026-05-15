@@ -84,6 +84,7 @@ _LOADING_DTYPE = np.type([
     ("p", np.float64),
     ("log_p", np.float64),
     ("e", np.float64),
+    ("epsilon", np.float64),
 ])
 
 def loading_curve(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray:
@@ -92,60 +93,70 @@ def loading_curve(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray:
     """
     loading_data: list[Tuple[int, float, float, float]] = []
     max_p = -np.inf
+    e0 = y[0]
 
     for i, (p, e) in enumerate(zip(x,y)):
         if p > max_p:
-            loading_data.append((i, p, np.log10(p), e))
+            log_p = np.log10(p) if p > 0 else 0.0
+            epsilon = (e0-e)/(1+e0)
+            loading_data.append((i, p, log_p, e, epsilon))
             max_p = p
     if not loading_data:
         return np.array([], dtype=_LOADING_DTYPE)
     return np.array(loading_data, dtype=_LOADING_DTYPE)
 
 
-def _fit_error(x: NDArray[np.float64], y: NDArray[np.float64]) -> float:
-    coeffs = np.polyfit(x, y, deg=1)
+def _fit_error(x: NDArray[np.float64], y: NDArray[np.float64], deg: np.number = 1) -> float:
+    coeffs = np.polyfit(x, y, deg)
     y_pred = np.polyval(coeffs, x)
     return float(np.sum(y - y_pred)**2)
 
-def bilinear(log_x: NDArray[np.float64], y: NDArray[np.float64]) -> Tuple[float, float, float, float]:
+def bilinear(x: NDArray[np.float64], y: NDArray[np.float64]) -> Tuple[float, float, float, float, float, np.number]:
     """
-    Bilinear fit to find yield point
+    General bilinear fit to find least square error
     
     Params:
-    x: 1-d array of np.log10(pressure)
-    y: 1-d array of void ratio
+    x: 1-d generic array, e.g., pressure
+    y: 1-d generic array, e.g., void ratio
 
     Returns:
-    sigma_p, e_p, sse1, sse2
+    x_int, y_int, coeffs1, coeffs2, seg1, seg2, best_k
 
     """
-    n = len(log_x)
+    n = len(x)
+    deg = 1
     best_k = None
     best_err = np.inf
 
     # Minimum of 2 points are needed
     for k in range(2, n-1):
-        err = _fit_error(log_x[:k], y[:k]) + _fit_error(log_x[k:], y[k:])
+        err = _fit_error(x[:k], y[:k], deg) + _fit_error(x[k:], y[k:], deg)
         if err < best_err:
             best_err = err
             best_k = k
 
-    coeffs1 = np.polyfit(log_x[:best_k], y[:best_k], deg=1)
-    coeffs2 = np.polyfit(log_x[best_k:], y[best_k:], deg=1)
-
-    sse1 = float(np.sum(y[:best_k] - np.polyval(coeffs1, log_x[:best_k]))**2)
-    sse2 = float(np.sum(y[best_k:] - np.polyval(coeffs2, log_x[best_k:]))**2)
+    coeffs1 = np.polyfit(x[:best_k], y[:best_k], deg)
+    coeffs2 = np.polyfit(x[best_k:], y[best_k:], deg)
 
     dslope = (coeffs1[0] - coeffs2[0])
     if np.isclose(dslope, 0, atol=1e-10):
         raise ValueError("The two regression lines are parallel. Cannot determine intersection (yield) point.")
     
-    log_p_init = (coeffs1[1] - coeffs2[1]) / dslope
-    e_p = float(np.polyval(coeffs1, log_p_init))
+    x_int = (coeffs1[1] - coeffs2[1]) / dslope
+    y_int = float(np.polyval(coeffs1, x_int))
 
-    sigma_p = float(10**log_p_init) # Return to original unit
+    # Plotting parameters for each segment (extended to meet at intersection)
+    x1 = np.append(x[:best_k], x_int)
+    x2 = np.insert(x[best_k:], 0, x_int)
+    seg1 = {"x": x1, "y_fit": np.polyval(coeffs1, x1)}
+    seg2 = {"x": x2, "y_fit": np.polyval(coeffs2, x2)}
 
-    return sigma_p, e_p, sse1, sse2
+    return {
+        "x_int": x_int, "y_int": y_int,
+        "coeff1": coeffs1, "coeff2": coeffs2,
+        "seg1": seg1, "seg2": seg2,
+        "best_k": best_k,
+    }
 
 # def _find_unloading_and_reloading_indices(stress: Sequence[float]) -> Tuple[List[int], List[int]]:
 #     idx_unloading_init: List[int] = []
