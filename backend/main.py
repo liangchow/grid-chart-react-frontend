@@ -80,7 +80,11 @@ def remove_loginf_rows(loading_data: NDArray) -> NDArray:
    
 # Processing functions
 
-_LOADING_DTYPE = np.type([
+@app.get("/test", tags=["root"])
+async def read_root() -> dict:
+    return {"message": "Welcome to your test page."}
+
+_LOADING_DTYPE = np.dtype([
     ("idx", np.intp),
     ("p", np.float64),
     ("log_p", np.float64),
@@ -170,4 +174,4 @@ def bilinear(x: NDArray[np.float64], y: NDArray[np.float64]) -> Tuple[float, flo
 #     return idx_unloading_init, idx_reloading_init
 
 if __name__ == "__main__":
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
