@@ -19,7 +19,7 @@ function getApiBaseUrl(): string {
 }
 
 export async function processData(request: ProcessRequest): Promise<ProcessResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/api/process`, {
+  const res = await fetch(`${getApiBaseUrl()}/process`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
