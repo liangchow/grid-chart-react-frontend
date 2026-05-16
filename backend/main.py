@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, model_validator
@@ -167,3 +168,6 @@ def bilinear(x: NDArray[np.float64], y: NDArray[np.float64]) -> Tuple[float, flo
 #         if stress[i] < stress[i - 1] and stress[i] < stress[i + 1]:
 #             idx_reloading_init.append(i)
 #     return idx_unloading_init, idx_reloading_init
+
+if __name__ == "__main__":
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
