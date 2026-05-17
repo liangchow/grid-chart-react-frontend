@@ -20,7 +20,7 @@ function Grid({ data, onChange }: Props) {
   ]
 
   return (
-    <div className="p-4 bg-gray-500 rounded-lg shadow">
+    <div className="p-4 rounded-lg">
         <DataSheetGrid<Row>
           value={data}
           columns={columns}
