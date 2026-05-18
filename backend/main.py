@@ -32,6 +32,7 @@ class ProcessResponse(BaseModel):
     Data needed to render in frontend.
     """
     loding_curve_points: List[Point]
+
     segment1: LineSegment
     segment2: LineSegment
     sigma_p: float
@@ -103,7 +104,7 @@ def loading_curve(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray:
     for i, (p, e) in enumerate(zip(x,y)):
         if p > max_p:
             log_p = np.log10(p) if p > 0 else 0.0
-            epsilon = (e0-e)/(1+e0)
+            epsilon = (e0 - e)/(1 + e0)
             loading_data.append((i, p, log_p, e, epsilon))
             max_p = p
     if not loading_data:

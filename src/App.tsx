@@ -10,7 +10,7 @@ import { processData, type ProcessResponse } from "./api/process";
 function App() {
  
   const [data, setData] = useState<Row[]>(demoData)
-  const [sigmaV0, setSigmaV0] = useState<string>("75")
+  const [sigmaV0, setSigmaV0] = useState<number>(75.0)
   const [result, setResult] = useState<ProcessResponse | null>(null)
   const [warningMessage, setWarningMessage] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -18,7 +18,7 @@ function App() {
   async function handleProcess() {
     const sigmaV0Value = Number(sigmaV0)
     if (!Number.isFinite(sigmaV0Value) || sigmaV0Value <= 0) {
-      setWarningMessage("Initial effective stress must be a positive number.")
+      setWarningMessage("Initial effective stress must be greater or equal to zero.")
       return
     }
 
@@ -43,7 +43,7 @@ function App() {
             <input
               type="number"
               value={sigmaV0}
-              onChange={(e) => setSigmaV0(e.target.value)}
+              onChange={(e) => setSigmaV0(Number(e.target.value))}
               min={0}
             />
           </label>
