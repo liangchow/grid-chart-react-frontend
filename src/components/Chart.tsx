@@ -2,29 +2,36 @@ import { useEffect, useRef, useMemo } from "react";
 import * as d3 from "d3";
 import type { Row } from "../types/Row";
 
+type Point = { x: number; y: number };
+
 type Props = {
   data: Row[];
-  compressionIdx: number | null;
-  recompressionIdx: number | null;
+  segment1: Point[] | null;
+  segment2: Point[] | null;
+  intersection: Point | null;
   warnings: string[];
 };
 
+type ChartPoint = { x: number; y: number };
+
 const MARGIN = { top: 40, right: 30, bottom: 50, left: 60 };
 
-function Chart({ data, compressionIdx, recompressionIdx, warnings }: Props) {
+function Chart({ data, warnings }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const points = useMemo(
-    () =>
-      data
-        .filter(
-          (d): d is Required<Row> =>
-            d.pressure != null && d.void_ratio != null && d.pressure > 0
-        )
-        .map((d) => ({ x: d.pressure, y: d.void_ratio })),
-    [data]
-  );
+  const points = useMemo((): ChartPoint[] => {
+    return data
+      .filter(
+        (d): d is Row & { pressure: number; void_ratio: number } =>
+          typeof d.pressure === "number" &&
+          Number.isFinite(d.pressure) &&
+          d.pressure > 0 &&
+          typeof d.void_ratio === "number" &&
+          Number.isFinite(d.void_ratio)
+      )
+      .map((d) => ({ x: d.pressure, y: d.void_ratio }));
+  }, [data]);
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -186,7 +193,7 @@ function Chart({ data, compressionIdx, recompressionIdx, warnings }: Props) {
 
     // Line
     const lineGenerator = d3
-      .line<{ x: number; y: number }>()
+      .line<ChartPoint>()
       .x((d) => xScale(d.x))
       .y((d) => yScale(d.y))
       .curve(d3.curveLinear)
@@ -234,8 +241,8 @@ function Chart({ data, compressionIdx, recompressionIdx, warnings }: Props) {
       .style("transition", "opacity 0.15s");
 
     pointGroup
-      .selectAll<SVGCircleElement, { x: number; y: number }>("circle")
-      .on("mouseover", function (event, d) {
+      .selectAll<SVGCircleElement, ChartPoint>("circle")
+      .on("mouseover", function (_event, d) {
         d3.select(this).attr("r", 6).attr("stroke", "#374151");
         tooltip
           .style("opacity", "1")
@@ -255,20 +262,6 @@ function Chart({ data, compressionIdx, recompressionIdx, warnings }: Props) {
 
   return (
     <div style={{ width: "100%" }}>
-      {/* Stats row */}
-      <div style={{ marginBottom: "8px", fontSize: "13px", color: "#374151" }}>
-        {compressionIdx != null && (
-          <span style={{ marginRight: "16px" }}>
-            Compression Index: <strong>{compressionIdx.toFixed(3)}</strong>
-          </span>
-        )}
-        {recompressionIdx != null && (
-          <span>
-            Recompression Index: <strong>{recompressionIdx.toFixed(3)}</strong>
-          </span>
-        )}
-      </div>
-
       {/* Warnings */}
       {warnings.length > 0 && (
         <div style={{ marginBottom: "8px" }}>

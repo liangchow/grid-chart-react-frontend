@@ -51,8 +51,9 @@ function App() {
         </div>
         <Chart
           data={data}
-          compressionIdx={result?.compressionIdx ?? null}
-          recompressionIdx={result?.recompressionIdx ?? null}
+          segment1={result?.segment1 ?? null}
+          segment2={result?.segment2 ?? null}
+          intersection={result?.intersection ?? null}
           warnings={result?.warnings ?? []}
         />
         <Grid data={data} onChange={setData} />

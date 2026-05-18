@@ -8,44 +8,38 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-# Define model
+# Define models
 class RowIn(BaseModel):
     pressure: Optional[float] = None
     void_ratio: Optional[float] = None
 
-# class ProcessRequest(BaseModel):
-#     sigmaV0: float = Field(..., gt=0)
-#     rows: List[RowIn]
+class ProcessRequest(BaseModel):
+    sigmaV0: float = Field(..., gt=0)
+    rows: List[RowIn]
 
 class Point(BaseModel):
-    x: float
-    y: float
-
-class LineSegment(BaseModel):
-    start: Point
-    end: Point
-    slope: float
-    intercept: float
+    x: float  # pressure (linear scale)
+    y: float  # void ratio
 
 class ProcessResponse(BaseModel):
     """
-    Data needed to render in frontend.
+    Data needed to render the bilinear fit in the frontend Chart.
+    segment1 / segment2: arrays of {x, y} points (pressure, void ratio) for each fit line.
+    intersection: the yield point where the two lines meet (preconsolidation pressure).
     """
-    loding_curve_points: List[Point]
-
-    segment1: LineSegment
-    segment2: LineSegment
-    sigma_p: float
-    e_p: float
-    ccIdx: Optional[float]
-    crIdx: Optional[float]
+    segment1: List[Point]
+    segment2: List[Point]
+    intersection: Point
     warnings: List[str]
+    compressionIdx: Optional[float] = None
+    recompressionIdx: Optional[float] = None
 
 # App setup
 app = FastAPI(debug=True)
 
 origins = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 app.add_middleware(
@@ -81,10 +75,6 @@ def remove_loginf_rows(loading_data: NDArray) -> NDArray:
    
 # Processing functions
 
-@app.get("/test", tags=["root"])
-async def read_root() -> dict:
-    return {"message": "Welcome to your test page."}
-
 _LOADING_DTYPE = np.dtype([
     ("idx", np.intp),
     ("p", np.float64),
@@ -104,7 +94,7 @@ def loading_curve(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray:
     for i, (p, e) in enumerate(zip(x,y)):
         if p > max_p:
             log_p = np.log10(p) if p > 0 else 0.0
-            epsilon = (e0 - e)/(1 + e0)
+            epsilon = (e0-e)/(1+e0)
             loading_data.append((i, p, log_p, e, epsilon))
             max_p = p
     if not loading_data:
@@ -174,5 +164,66 @@ def bilinear(x: NDArray[np.float64], y: NDArray[np.float64]) -> Tuple[float, flo
 #             idx_reloading_init.append(i)
 #     return idx_unloading_init, idx_reloading_init
 
+# App functions
+
+@app.get("/test", tags=["root"])
+async def read_root() -> dict:
+    return {"message": "Welcome to your test page."}
+
+@app.post("/process", tags=["process"])
+async def process(request: ProcessRequest) -> ProcessResponse:
+    warnings: List[str] = []
+
+    # 1. Extract finite, positive-pressure rows
+    pairs = [
+        (r.pressure, r.void_ratio)
+        for r in request.rows
+        if r.pressure is not None
+        and r.void_ratio is not None
+        and np.isfinite(r.pressure)
+        and np.isfinite(r.void_ratio)
+        and r.pressure > 0
+    ]
+
+    if len(pairs) < 4:
+        raise HTTPException(
+            status_code=422,
+            detail="At least 4 valid data points (positive pressure, finite void ratio) are required."
+        )
+
+    x = np.array([p[0] for p in pairs], dtype=np.float64)
+    y = np.array([p[1] for p in pairs], dtype=np.float64)
+
+    # Step 1: isolate the loading curve (strip unloading-reloading cycles)
+    lc = loading_curve(x, y)
+
+    if len(lc) < 4:
+        raise HTTPException(
+            status_code=422,
+            detail="Not enough monotonically increasing pressure points to fit a loading curve."
+        )
+
+    # Step 2: bilinear fit in log(P) – void ratio space
+    try:
+        fit = bilinear(lc["log_p"], lc["e"])
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    # seg1/seg2 x-values are log10(pressure); convert back to pressure for the Chart
+    def to_points(log_p_arr: NDArray, e_arr: NDArray) -> List[Point]:
+        return [Point(x=float(10 ** lp), y=float(e)) for lp, e in zip(log_p_arr, e_arr)]
+
+    segment1 = to_points(fit["seg1"]["x"], fit["seg1"]["y_fit"])
+    segment2 = to_points(fit["seg2"]["x"], fit["seg2"]["y_fit"])
+    intersection = Point(x=float(10 ** fit["x_int"]), y=float(fit["y_int"]))
+
+    return ProcessResponse(
+        segment1=segment1,
+        segment2=segment2,
+        intersection=intersection,
+        warnings=warnings,
+    )
+
+
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
